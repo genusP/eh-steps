@@ -1,0 +1,5 @@
+[wokwi]
+version = 1
+elf = ".esphome/build/steps/.pioenvs/steps/firmware.elf"
+firmware = ".esphome/build/steps/.pioenvs/steps/firmware.bin"
+gdbServerPort=3333

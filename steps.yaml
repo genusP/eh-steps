@@ -1,0 +1,11 @@
+esphome:
+  name: steps
+  on_boot: 
+    then:
+        - logger.log: "on_boot"
+
+esp32:
+  board: upesy_wroom
+
+logger:
+  

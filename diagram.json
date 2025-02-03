@@ -1,0 +1,95 @@
+{
+    "version": 1,
+    "author": "Gennady Pundikov",
+    "editor": "wokwi",
+    "parts": [
+        { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": 110.3, "left": -302.6, "attrs": { } },
+        {
+            "type": "wokwi-neopixel-canvas",
+            "id": "neopixels8",
+            "top": -453.1,
+            "left": 73.3,
+            "rotate": 90,
+            "attrs": { "rows": "21", "cols": "1", "pixelate": "circle" }
+        },
+        {
+            "type": "wokwi-neopixel-canvas",
+            "id": "neopixels7",
+            "top": -404.7,
+            "left": 73.3,
+            "rotate": -90,
+            "attrs": { "rows": "21", "cols": "1", "pixelate": "circle" }
+        },
+        {
+            "type": "wokwi-neopixel-canvas",
+            "id": "neopixels6",
+            "top": -349.3,
+            "left": 73.3,
+            "rotate": 90,
+            "attrs": { "rows": "21", "cols": "1", "pixelate": "circle" }
+        },
+        {
+            "type": "wokwi-neopixel-canvas",
+            "id": "neopixels5",
+            "top": -320,
+            "left": 79.2,
+            "rotate": -90,
+            "attrs": { "rows": "23", "cols": "1", "pixelate": "circle" }
+        },
+        {
+            "type": "wokwi-neopixel-canvas",
+            "id": "neopixels4",
+            "top": -276.2,
+            "left": 80.2,
+            "rotate": 90,
+            "attrs": { "rows": "23", "cols": "1", "pixelate": "circle" }
+        },
+        {
+            "type": "wokwi-neopixel-canvas",
+            "id": "neopixels3",
+            "top": -204.7,
+            "left": 73.3,
+            "rotate": -90,
+            "attrs": { "rows": "21", "cols": "1", "pixelate": "circle" }
+        },
+        {
+            "type": "wokwi-neopixel-canvas",
+            "id": "neopixels2",
+            "top": -153.1,
+            "left": 73.3,
+            "rotate": 90,
+            "attrs": { "rows": "21", "cols": "1", "pixelate": "circle" }
+        },
+        {
+            "type": "wokwi-neopixel-canvas",
+            "id": "neopixels1",
+            "top": -105.1,
+            "left": 73.3,
+            "rotate": -90,
+            "attrs": { "rows": "21", "cols": "1", "pixelate": "circle" }
+        },
+        {
+            "type": "wokwi-pir-motion-sensor",
+            "id": "pir1",
+            "top": -360.8,
+            "left": 376.62,
+            "attrs": { }
+        },
+        { "type": "wokwi-pir-motion-sensor", "id": "pir2", "top": 263.2, "left": 386.22, "attrs": { } }
+    ],
+    "connections": [
+        [ "esp:TX0", "$serialMonitor:RX", "", [ ] ],
+        [ "esp:RX0", "$serialMonitor:TX", "", [ ] ],
+        [ "neopixels1:DOUT", "neopixels2:DIN", "", [ "h28.8", "v-28.8", "h-412.8", "v-19.2" ] ],
+        [ "neopixels2:DOUT", "neopixels3:DIN", "", [ "h-16", "v-13.8", "h412.8", "v-9.6" ] ],
+        [ "neopixels3:DOUT", "neopixels4:DIN", "", [ "h19.2", "v-25.6", "h-403.2", "v-19.2" ] ],
+        [ "neopixels4:DOUT", "neopixels5:DIN", "", [ "h-16", "v-10.6", "h412.8", "v-28.8" ] ],
+        [ "neopixels5:DOUT", "neopixels6:DIN", "", [ "h19.2", "v-30.8", "h-403.2", "v-17.6" ] ],
+        [ "neopixels6:DOUT", "neopixels7:DIN", "", [ "h-16", "v-17", "h412.8", "v-24.6" ] ],
+        [ "neopixels7:DOUT", "neopixels8:DIN", "", [ "h19.2", "v-28.8", "h-403.2", "v-9.6" ] ],
+        [ "pir2:OUT", "esp:D4", "green", [ "v28.8", "h-585.74", "v-153.7" ] ],
+        [ "pir1:OUT", "esp:D5", "green", [ "v384", "h-0.14", "v86.4" ] ],
+        [ "esp:D18", "neopixels1:DIN", "green", [ "h566.1", "v-63.1" ] ]
+    ],
+    "dependencies": { }
+}

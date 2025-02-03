@@ -1,3 +1,12 @@
 {
-  "image":"mcr.microsoft.com/devcontainers/python:3.13"
+  "image": "ghcr.io/esphome/esphome:dev",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Wokwi.wokwi-vscode",
+        "ms-vscode.cpptools",
+        "ESPHome.esphome-vscode"
+      ]
+    }
+  }
 }
