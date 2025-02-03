@@ -1,11 +1,16 @@
 {
-  "image": "ghcr.io/esphome/esphome:dev",
+  "name": "Esphome + Wokwi Simulator",
+  "build": {
+    "dockerfile": "containerfile",
+    "context": "."
+  },
   "customizations": {
     "vscode": {
       "extensions": [
         "Wokwi.wokwi-vscode",
         "ms-vscode.cpptools",
-        "ESPHome.esphome-vscode"
+        "ESPHome.esphome-vscode",
+        "ms-vscode.cpptools-extension-pack"
       ]
     }
   }

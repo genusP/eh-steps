@@ -1,0 +1,11 @@
+FROM ghcr.io/esphome/esphome:dev
+
+RUN pio pkg install --global --tool "espressif/toolchain-xtensa-esp32@8.4.0+2021r2-patch5" \
+    && python3 -c 'import urllib.request; urllib.request.urlretrieve("https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v14.2_20240403/xtensa-esp-elf-gdb-14.2_20240403-x86_64-linux-gnu.tar.gz", "xtensa-esp-elf-gdb-14.2_20240403-x86_64-linux-gnu.tar.gz"); exit();' \
+    && rm /root/.platformio/packages/toolchain-xtensa-esp32/bin/xtensa-esp32-elf-gdb \
+    && tar -zxvf xtensa-esp-elf-gdb-14.2_20240403-x86_64-linux-gnu.tar.gz xtensa-esp-elf-gdb/bin/xtensa-esp-elf-gdb-no-python xtensa-esp-elf-gdb/bin/xtensa-esp32-elf-gdb xtensa-esp-elf-gdb/lib/xtensa_esp32.so \
+    && rm xtensa-esp-elf-gdb-14.2_20240403-x86_64-linux-gnu.tar.gz \
+    && mv xtensa-esp-elf-gdb/bin/xtensa-esp-elf-gdb-no-python /root/.platformio/packages/toolchain-xtensa-esp32/bin/xtensa-esp-elf-gdb-no-python \
+    && mv xtensa-esp-elf-gdb/bin/xtensa-esp32-elf-gdb /root/.platformio/packages/toolchain-xtensa-esp32/bin/xtensa-esp32-elf-gdb \
+    && mv xtensa-esp-elf-gdb/lib/xtensa_esp32.so /root/.platformio/packages/toolchain-xtensa-esp32/lib/xtensa_esp32.so \
+    && rm xtensa-esp-elf-gdb/* -r
