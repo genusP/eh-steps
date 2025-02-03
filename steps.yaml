@@ -1,11 +1,79 @@
+substitutions:
+  build_type: release
+
 esphome:
   name: steps
   on_boot: 
     then:
         - logger.log: "on_boot"
+        - light.control: 
+            id: settings
+            red: 0%
+            blue: 0%
+            brightness: 75%
+  includes: 
+    - helpers.h
+  platformio_options: 
+    build_type: $build_type
 
 esp32:
   board: upesy_wroom
 
 logger:
   
+binary_sensor:
+  - platform: gpio
+    id: pir1
+    pin: 5
+    internal: True
+    on_state: 
+      then:
+        - light.toggle: line
+        - logger.log: D5 toggle  
+
+  - platform: gpio
+    id: pir2
+    pin: 4  
+    internal: True
+    on_state: 
+      then:
+        - lambda: |-
+            if(!x)
+              id(line).turn_off();
+            else 
+            {
+              CopyLightState(id(line), id(settings))
+              .set_state(true)
+              .perform();
+            }
+        - logger.log: D4 toggle
+        - delay: 3s
+        - light.turn_off:  line
+            
+        
+light:
+  - id: settings
+    platform: rgb
+    red: output_r
+    blue: output_r
+    green: output_r
+    
+  - id: line
+    platform: esp32_rmt_led_strip
+    chipset: WS2812
+    num_leds: 172
+    pin: 18
+    rgb_order: RGB
+    rmt_channel: 0
+    default_transition_length: 
+      milliseconds: 10
+    internal: True
+    # brightness: 50%
+
+output:
+  - platform: template
+    id: output_r
+    type: float
+    write_action: 
+      then:
+        

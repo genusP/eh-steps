@@ -1,5 +1,6 @@
 {
     "autoHide.hideSideBarsOnDebug": false,
     "autoHide.hidePanelOnDebug": false,
-    "json.format.keepLines": true
+    "json.format.keepLines": true,
+    "C_Cpp.errorSquiggles": "enabledIfIncludesResolve"
 }
