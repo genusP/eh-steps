@@ -3,7 +3,7 @@
     "author": "Gennady Pundikov",
     "editor": "wokwi",
     "parts": [
-        { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": 110.3, "left": -302.6, "attrs": { } },
+        { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 110.3, "left": -302.6, "attrs": { } },
         {
             "type": "wokwi-neopixel-canvas",
             "id": "neopixels8",
@@ -75,11 +75,33 @@
             "left": 376.62,
             "attrs": { }
         },
-        { "type": "wokwi-pir-motion-sensor", "id": "pir2", "top": 263.2, "left": 386.22, "attrs": { } }
+        { "type": "wokwi-pir-motion-sensor", "id": "pir2", "top": 263.2, "left": 386.22, "attrs": { } },
+        {
+            "type": "wokwi-neopixel-meter",
+            "id": "meter1",
+            "top": -454.10660958546515,
+            "left": -425.01065051686334,
+            "attrs": { "pixels": "16" }
+        },
+        {
+            "type": "wokwi-slide-potentiometer",
+            "id": "pot1",
+            "top": -331,
+            "left": -423.4,
+            "attrs": { "travelLength": "30" }
+        },
+        {
+            "type": "wokwi-resistor",
+            "id": "r1",
+            "top": -100.8,
+            "left": -442.15,
+            "rotate": 90,
+            "attrs": { "value": "10000" }
+        }
     ],
     "connections": [
-        [ "esp:TX0", "$serialMonitor:RX", "", [ ] ],
-        [ "esp:RX0", "$serialMonitor:TX", "", [ ] ],
+        [ "esp:TX", "$serialMonitor:RX", "", [ ] ],
+        [ "esp:RX", "$serialMonitor:TX", "", [ ] ],
         [ "neopixels1:DOUT", "neopixels2:DIN", "", [ "h28.8", "v-28.8", "h-412.8", "v-19.2" ] ],
         [ "neopixels2:DOUT", "neopixels3:DIN", "", [ "h-16", "v-13.8", "h412.8", "v-9.6" ] ],
         [ "neopixels3:DOUT", "neopixels4:DIN", "", [ "h19.2", "v-25.6", "h-403.2", "v-19.2" ] ],
@@ -87,9 +109,13 @@
         [ "neopixels5:DOUT", "neopixels6:DIN", "", [ "h19.2", "v-30.8", "h-403.2", "v-17.6" ] ],
         [ "neopixels6:DOUT", "neopixels7:DIN", "", [ "h-16", "v-17", "h412.8", "v-24.6" ] ],
         [ "neopixels7:DOUT", "neopixels8:DIN", "", [ "h19.2", "v-28.8", "h-403.2", "v-9.6" ] ],
-        [ "pir2:OUT", "esp:D4", "green", [ "v28.8", "h-585.74", "v-153.7" ] ],
-        [ "pir1:OUT", "esp:D5", "green", [ "v384", "h-0.14", "v86.4" ] ],
-        [ "esp:D18", "neopixels1:DIN", "green", [ "h566.1", "v-63.1" ] ]
+        [ "pir2:OUT", "esp:4", "green", [ "v28.8", "h-585.74", "v-153.7" ] ],
+        [ "pir1:OUT", "esp:5", "green", [ "v384", "h-0.14", "v86.4" ] ],
+        [ "esp:18", "neopixels1:DIN", "green", [ "h566.1", "v-63.1" ] ],
+        [ "esp:3V3", "r1:2", "red", [ "h-18.81", "v0.1", "h-96" ] ],
+        [ "esp:GND.2", "pot1:GND", "black", [ "h19.44", "v-427.1", "h-34" ] ],
+        [ "r1:1", "pot1:SIG", "blue", [ "h0" ] ],
+        [ "esp:34", "r1:1", "blue", [ "h-57.21", "v-302.3" ] ]
     ],
     "dependencies": { }
 }

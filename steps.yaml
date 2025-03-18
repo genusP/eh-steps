@@ -1,74 +1,176 @@
 substitutions:
   build_type: release
+  steps_width: '{21,21,21,23,23,21,21,21}'
+  delay: 500ms
+
+globals:
+  - id: steps_width
+    type: std::vector<uint8_t>
+    initial_value: $steps_width
+  - id: start_step
+    type: esphome::light::LightState*
+  - id: end_step
+    type: esphome::light::LightState*
+
+esp32:
+  board: upesy_wroom
 
 esphome:
-  name: steps
+  name: steps            
+  includes: 
+    - helpers.h
+    - effects.h
+  platformio_options: 
+    build_type: $build_type
   on_boot: 
     then:
         - logger.log: "on_boot"
         - light.control: 
             id: settings
-            red: 0%
             blue: 0%
+            green: 0%
             brightness: 75%
-  includes: 
-    - helpers.h
-  platformio_options: 
-    build_type: $build_type
-
-esp32:
-  board: upesy_wroom
+        - lambda: |-
+            GenerateSteps(id(line), id(steps_width));
+            id(start_step) = GetStep(0);
+            id(end_step) = GetStep(id(steps_width).size()-1);
+        - script.execute: steps_off
 
 logger:
+
+script:
+  - id: steps_on
+    parameters: 
+      reverse: bool
+    then:
+      - logger.log: start sequence
+      - repeat: 
+          count: !lambda return id(steps_width).size();
+          then: 
+            - lambda: |-
+                auto step_num = reverse ? id(steps_width).size() -1 - iteration : iteration;
+                StepOn(step_num, id(settings));
+            - delay: $delay
+      - logger.log: end sequence
+
+  - id: steps_off
+    then:
+      - light.control:
+          id: line
+          brightness: 1%
+          transition_length: 3s
+      - delay: 3s
+      - light.turn_off: line
   
+sensor:
+  - platform: adc
+    pin: 34
+    name: Light sensor
+    update_interval: 2s
+    filters:
+      - delta: 0.01
+    on_value_range: 
+      - below: 0.6
+        then: 
+          - binary_sensor.template.publish: 
+              id: is_dark
+              state: ON
+      - above: 0.7
+        then: 
+          - binary_sensor.template.publish: 
+              id: is_dark
+              state: OFF
+        
+
 binary_sensor:
   - platform: gpio
     id: pir1
     pin: 5
     internal: True
     on_state: 
-      then:
-        - light.toggle: line
-        - logger.log: D5 toggle  
+      if:
+        condition: 
+          not:
+          - script.is_running: steps_on
+        then:
+          - script.execute:
+              reverse: true
+              id: steps_on
 
   - platform: gpio
     id: pir2
     pin: 4  
     internal: True
-    on_state: 
+    on_press: 
       then:
-        - lambda: |-
-            if(!x)
-              id(line).turn_off();
-            else 
-            {
-              CopyLightState(id(line), id(settings))
-              .set_state(true)
-              .perform();
-            }
-        - logger.log: D4 toggle
-        - delay: 3s
-        - light.turn_off:  line
-            
+        - light.turn_on: 
+            id: line
+            effect: My Custom Effect
+    # on_state: 
+      # if:
+      #   condition: 
+      #     and:
+      #       - binary_sensor.is_on: pir2
+      #       - not:
+      #         - script.is_running: steps_on
+      #   then:
+      #     - script.execute:
+      #         reverse: false
+      #         id: steps_on
+      #     - wait_until:
+      #         condition:
+      #           not: 
+      #             script.is_running: steps_on
+      #     - delay: 3s
+      #     - script.execute: steps_off
+
+  - platform: template
+    internal: True
+    id: is_dark
+
+select:
+  - platform: template
+    internal: True
+    optimistic: True
+    id: state
+    options: 
+      - "off"
+      - standby
+      - animation
+      - "on"
+    set_action: 
+      then:
         
+
 light:
   - id: settings
     platform: rgb
     red: output_r
     blue: output_r
     green: output_r
+    default_transition_length: $delay
     
   - id: line
     platform: esp32_rmt_led_strip
     chipset: WS2812
     num_leds: 172
     pin: 18
-    rgb_order: RGB
+    rgb_order: GRB
     rmt_channel: 0
     default_transition_length: 
       milliseconds: 10
     internal: True
-    # brightness: 50%
+    effects:
+      - addressable_lambda:
+          name: My Custom Effect
+          update_interval: 1s
+          lambda: |-
+            ColorSwitch(id(line));
+    
+  - id: include_partition_component
+    platform: partition
+    segments:
+      - single_light_id: settings
 
 output:
   - platform: template
