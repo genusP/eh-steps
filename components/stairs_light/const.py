@@ -1,0 +1,6 @@
+CONF_LED_ID = 'led'
+CONF_STEPS = 'steps'
+CONF_STEP = 'step'
+CONF_ANIMATIONS = 'animations'
+CONF_ANIMATION = 'animation'
+CONF_ANIMATION_LENGTH = 'animation_length'

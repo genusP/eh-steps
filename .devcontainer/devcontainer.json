@@ -10,7 +10,8 @@
         "Wokwi.wokwi-vscode",
         "ms-vscode.cpptools",
         "ESPHome.esphome-vscode",
-        "ms-vscode.cpptools-extension-pack"
+        "ms-vscode.cpptools-extension-pack",
+        "ms-python.python"
       ]
     }
   }
