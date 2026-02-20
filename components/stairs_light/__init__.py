@@ -20,7 +20,6 @@ from esphome.const import (
     CONF_BRIGHTNESS
 )
 from esphome.components import light
-from esphome.components.partition.light import to_code as partition_light_to_code, PartitionLightOutput, CONFIG_SCHEMA as PARTITION_CONFIG_SCHEMA
 
 from .const import CONF_LED_ID, CONF_STEPS, CONF_STEP, CONF_ANIMATION, CONF_ANIMATIONS, CONF_ANIMATION_LENGTH
 from .types import stairs_light_ns, StairsLight
@@ -44,11 +43,16 @@ STAIRS_LIGHT_STEP_ON_ACTION_SCHEMA = cv.Schema({
     cv.Optional(CONF_BRIGHTNESS): cv.templatable(cv.percentage)
 })
 
-RUN_ACTION_SCHEMA = cv.Schema({
+TURN_ON_ACTION_SCHEMA = automation.maybe_simple_id({
     cv.Required(CONF_ID): cv.use_id(StairsLight),
     cv.Optional(CONF_REVERSED, default=False): cv.templatable(cv.boolean),
     cv.Optional(CONF_ANIMATION_LENGTH): cv.templatable(cv.positive_time_period_milliseconds),
     cv.Optional(CONF_ANIMATION): cv.templatable(cv.string),
+})
+
+TURN_OFF_ACTION_SCHEMA = automation.maybe_simple_id({
+    cv.Required(CONF_ID): cv.use_id(StairsLight),
+    cv.Optional(CONF_TRANSITION_LENGTH, default="500ms"): cv.templatable(cv.positive_time_period_milliseconds),
 })
 
 @automation.register_action(
@@ -79,11 +83,11 @@ async def step_on_to_code(config, action_id, template_arg, args):
     return var
 
 @automation.register_action(
-    'stairs_light.run',
-    stairs_light_ns.class_('RunAction', automation.Action),
-    RUN_ACTION_SCHEMA
+    'stairs_light.turn_on',
+    stairs_light_ns.class_('TurnOnAction', automation.Action),
+    TURN_ON_ACTION_SCHEMA
 )
-async def stairs_light_run_to_code(config, action_id, template_arg, args):
+async def stairs_light_turnon_to_code(config, action_id, template_arg, args):
     paren = await cg.get_variable(config[CONF_ID])
     var = cg.new_Pvariable(action_id, template_arg, paren)
 
@@ -102,10 +106,22 @@ async def stairs_light_run_to_code(config, action_id, template_arg, args):
         animation_template = await cg.templatable(config[CONF_ANIMATION], args, cg.std_string)
         cg.add(var.set_animation(animation_template))
     return var
+    
+@automation.register_action(
+    'stairs_light.turn_off',
+    stairs_light_ns.class_('TurnOffAction', automation.Action),
+    TURN_OFF_ACTION_SCHEMA
+)
+async def stairs_light_turnoff_to_code(config, action_id, template_arg, args):
+    paren = await cg.get_variable(config[CONF_ID])
+    var = cg.new_Pvariable(action_id, template_arg, paren)
+
+    if (transition_lenght := config.get(CONF_TRANSITION_LENGTH)) is not None:
+        cg.add(var.set_transition_length(transition_lenght))
+    return var
 
 async def to_code(config):
-    cg.add_library("esp32-led-strip", None)
-
+    
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
 

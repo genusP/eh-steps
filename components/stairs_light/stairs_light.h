@@ -16,13 +16,18 @@ namespace esphome
   {
     class StairsLightAnimation;
 
+    struct StairsSettings
+    {
+      float r, g, b;
+      float brightness;
+      uint32_t animation_duration;
+      uint8_t animation_index; // Индекс эффекта в списке
+    } __attribute__((packed));
+
     class StairsLight : public Component, public light::LightOutput
     {
     public:
       StairsLight() = default;
-
-      // Entities
-      light::LightState *target_settings_light;
 
       void setup() override;
       void loop() override;
@@ -31,6 +36,7 @@ namespace esphome
       void set_name(const std::string &name) { this->name_ = name; }
       void set_steps(const std::vector<int> &steps);
       void set_animation_length(uint32_t length) { this->animation_length_ = length; }
+      void set_entry_light(float brightness);
       void add_animations(std::vector<StairsLightAnimation *> animations);
 
       uint32_t get_animation_length() const { return this->animation_length_; }
@@ -40,29 +46,44 @@ namespace esphome
       void schedule_show() { ((light::AddressableLight *)source_light_->get_output())->schedule_show(); }
 
       // Animation control methods
-      void start_run(bool reversed = false, uint32_t animation_length = 0, const std::string &animation_name = "");
-      void stop_run();
-      bool is_running() const { return this->running_; }
+      void turn_on(bool reversed = false, uint32_t animation_length = 0, const std::string &animation_name = "");
+      void turn_off(uint32_t transition_lenght = 500);
+      void stop_animation();
+      bool is_running() const { return this->current_animation_ != nullptr; }
 
       void write_state(light::LightState *state) override;
       light::LightTraits get_traits() override;
 
-    protected:
-      void turn_on_step_(uint32_t step);
+      const StairsSettings &get_settings()
+      {
+        return this->settings_;
+      }
+
+      float get_setup_priority() const override
+      {
+        return esphome::setup_priority::LATE;
+      }
+
+      // light::LightState *get_state() { return target_settings_light; }
+
+    private:
+      ESPPreferenceObject pref_;
+      void restore_settings();
+      void save_settings();
+      StairsSettings settings_;
+
+      // Entities
+      light::LightState *ha_light_;
 
       light::AddressableLightState *source_light_{nullptr};
       uint32_t animation_length_{0};
-      std::string name_{};
+      std::string name_{""};
+      std::string target_settings_light_name_{""};
       std::vector<light::ESPRangeView> steps_{};
       std::vector<StairsLightAnimation *> animations_{};
 
       // Animation state
-      bool running_{false};
-      uint32_t current_animation_length_{0};
       StairsLightAnimation *current_animation_;
-
-    private:
-      std::string target_settings_light_name_;
     };
 
     template <typename... Ts>
@@ -121,25 +142,45 @@ namespace esphome
     };
 
     template <typename... Ts>
-    class RunAction : public Action<Ts...>
+    class TurnOnAction : public Action<Ts...>
     {
     public:
-      explicit RunAction(StairsLight *parent) : parent_(parent) {}
+      explicit TurnOnAction(StairsLight *parent) : parent_(parent) {}
 
-      void set_reversed(bool reversed) { this->reversed_ = reversed; }
+      void set_reversed(TemplatableValue<bool, Ts...> reversed) { this->reversed_ = reversed; }
       void set_animation_length(uint32_t length) { this->animation_length_ = length; }
       void set_animation(const std::string &animation) { this->animation_ = animation; }
 
       void play(Ts... x) override
       {
-        this->parent_->start_run(this->reversed_, this->animation_length_, this->animation_);
+        this->parent_->turn_on(
+            this->reversed_.value(x...),
+            this->animation_length_,
+            this->animation_);
       }
 
     protected:
       StairsLight *parent_{nullptr};
-      bool reversed_{false};
+      TemplatableValue<bool, Ts...> reversed_{false};
       uint32_t animation_length_{0};
       std::string animation_{""};
+    };
+
+    template <typename... Ts>
+    class TurnOffAction : public Action<Ts...>
+    {
+    public:
+      explicit TurnOffAction(StairsLight *target) : target_(target) {}
+
+      void set_transition_length(uint32_t length) { trasition_length_ = length; }
+      void play(Ts... x)
+      {
+        target_->turn_off(trasition_length_);
+      }
+
+    private:
+      StairsLight *target_;
+      uint32_t trasition_length_{500};
     };
 
   } // namespace stairs_light

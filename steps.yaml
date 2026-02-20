@@ -14,13 +14,33 @@ esphome:
 esp32:
   board: upesy_wroom 
 
-# api:
+api:
 
-# wifi:
-#   ssid: Wokwi-GUEST
+wifi:
+  ssid: Wokwi-GUEST
 
 logger: 
   level: DEBUG
+
+switch:
+  - id: moveSensorsEnabled
+    platform: template
+    name: 'Включать по датчикам'
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: True
+  - id: stair_entry_light
+    platform: template
+    name: 'Подсвечивать первые ступени'
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: True
+    on_turn_on: 
+      then:
+        - lambda: |-
+            id(mysteps)->set_entry_light(.5f);
+    on_turn_off: 
+      then:
+        - lambda: |-
+            id(mysteps)->set_entry_light(0.f);
   
 binary_sensor:
   - platform: gpio
@@ -29,21 +49,9 @@ binary_sensor:
     internal: True
     on_press: 
       then:
-        - stairs_light.run:
-            id: mysteps
-            reversed: true
-            animation: arrow
-        - wait_until: 
-            condition:
-              lambda: return !id(mysteps).is_running();
-        - logger.log: animation completed
-        # - stairs_light.step_on:
-        #     id: mysteps
-        #     step: 3
-        #     red: 100%
-        #     transition_length: 1000ms
-        - delay: 3s
-        - light.turn_off: line
+        - script.execute: 
+            id: stairs_light_animation
+            direction: DOWN
 
   - platform: gpio
     id: pir2
@@ -51,15 +59,10 @@ binary_sensor:
     internal: True
     on_press:
       then:
-        - stairs_light.run:
-            id: mysteps
-            animation: arrow
-        - wait_until: 
-            condition:
-              lambda: return !id(mysteps).is_running();
-        - logger.log: animation completed
-        - delay: 3s
-        - light.turn_off: line
+        - switch.toggle: moveSensorsEnabled
+        # - script.execute: 
+        #     id: stairs_light_animation
+        #     direction: UP
               
               
 light:  
@@ -85,3 +88,58 @@ stairs_light:
     - arrow:
         increment: 3
   animation_length: 4000ms  
+
+script:
+- id: stairs_light_animation
+  mode: single
+  parameters: 
+    direction: string
+  then: 
+  - if: 
+      condition:
+        switch.is_on: moveSensorsEnabled
+      then:
+      - logger.log: 
+          level: DEBUG
+          format: "Запуск анимации в направлении: %s"
+          args: [ 'direction.c_str()' ]
+          
+      - stairs_light.turn_on:
+          id: mysteps
+          # Лямбда проверяет направление
+          reversed: !lambda |-
+            return direction == "DOWN";
+            
+      - wait_until: 
+          condition:
+            lambda: return !id(mysteps).is_running();
+            
+      - logger.log: 
+          level: DEBUG
+          format: "animation completed"
+      - delay: 3s
+      - stairs_light.turn_off: 
+          id: mysteps
+          transition_length: 1500ms
+
+
+button:
+  - platform: template
+    name: "Stairs Down"
+    on_press:
+      - script.execute:
+          id: stairs_light_animation
+          direction: "DOWN"
+          
+  - platform: template
+    name: "Stairs Up"
+    on_press:
+      - script.execute:
+          id: stairs_light_animation
+          direction: "UP"
+  - platform: template
+    name: Restart
+    on_press: 
+      - lambda: "ESP.restart();"
+          
+        

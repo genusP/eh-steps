@@ -14,10 +14,11 @@ namespace esphome
         public:
             StairsLightAnimation(const std::string &name) : light::LightEffect(name) {}
 
-            void init_internal(light::LightState *state, StairsLight *stairs_light)
+            void init_internal(StairsLight *stairs_light)
             {
-                light::LightEffect::init_internal(state);
                 stairs_light_ = stairs_light;
+                const auto &settings = stairs_light->get_settings();
+                state_ = &settings;
             }
 
             void start(bool reverce)
@@ -27,6 +28,7 @@ namespace esphome
             }
 
         protected:
+            const StairsSettings *state_;
             uint32_t animation_length() { return stairs_light_->get_animation_length(); }
             uint32_t size() { return stairs_light_->size(); }
             light::ESPRangeView *step(uint32_t num) { return stairs_light_->get_step(reverce_ ? size() - 1 - num : num); }
@@ -52,9 +54,9 @@ namespace esphome
                 step_transiton_length_ = animation_length() / size();
                 cur_step_num_ = 0;
                 start_time_ = millis();
-                red_ = state_->current_values.get_red();
-                green_ = state_->current_values.get_green();
-                blue_ = state_->current_values.get_blue();
+                red_ = state_->r;
+                green_ = state_->g;
+                blue_ = state_->b;
                 ESP_LOGD("StairsLightFadeAnimation", "Starting fade animation: %d steps, %dms per step",
                          size(), step_transiton_length_);
             }
@@ -69,13 +71,13 @@ namespace esphome
 
                     if (cur_step_num_ != step_num && step_num != 0 && step_num <= size())
                     {
-                        set_colors(cur_step_num_, 255);
+                        set_colors(cur_step_num_, state_->brightness * 255);
                     }
                     // Bounds check
                     if (step_num < size())
                     {
                         auto progress = (elapsed - step_transiton_length_ * step_num) / (float)step_transiton_length_;
-                        set_colors(step_num, progress * 255);
+                        set_colors(step_num, progress * state_->brightness * 255);
                         cur_step_num_ = step_num;
                     }
                 }
@@ -127,9 +129,9 @@ namespace esphome
                 frame_lenght = animation_length() / frame_cnt;
                 cur_frame = 0;
                 start_time = millis();
-                red_ = state_->current_values.get_red() * 255;
-                green_ = state_->current_values.get_green() * 255;
-                blue_ = state_->current_values.get_blue() * 255;
+                red_ = state_->r * state_->brightness * 255;
+                green_ = state_->g * state_->brightness * 255;
+                blue_ = state_->b * state_->brightness * 255;
             }
 
             void apply() override
@@ -166,6 +168,52 @@ namespace esphome
                         cur_frame = frame + 1;
                     }
                 }
+            }
+        };
+
+        class EntryStepsAnimation : public StairsLightAnimation
+        {
+        public:
+            EntryStepsAnimation(std::string &name) : StairsLightAnimation(name) {}
+            const uint32_t transition_length{5000};
+            void set_brightness(float brightness) { brightness_ = brightness; }
+            void start() override { 
+                start_time_ = millis(); 
+                ESP_LOGD("EntryStepsAnimation", "Animation started!");
+            }
+            void apply() override
+            {
+                auto progress = std::min(1.0, (millis() - start_time_) * 1.0 / transition_length);
+
+                auto entryColor = Color(
+                    (uint8_t)(state_->r * brightness_ * 255),
+                    (uint8_t)(state_->g * brightness_ * 255),
+                    (uint8_t)(state_->b * brightness_ * 255));
+                for (int i = 0; i < size(); i++)
+                {
+                    auto s = step(i);
+                    auto targetColor = i == 0 || i + 1 == size()
+                                           ? entryColor
+                                           : Color::BLACK;
+                    for (int l = 0; l < s->size(); l++)
+                    {
+                        auto curColor = (*s)[l].get();
+                        (*s)[l] = lerp_color(curColor, targetColor, progress);
+                    }
+                }
+            };
+
+        private:
+            float brightness_{0.5};
+            uint16_t start_time_{0};
+
+            Color lerp_color(Color a, Color b, float t)
+            {
+                return Color(
+                    esphome::lerp(t, a.red, b.red),
+                    esphome::lerp(t, a.green, b.green),
+                    esphome::lerp(t, a.blue, b.blue),
+                    esphome::lerp(t, a.white, b.white));
             }
         };
     }
